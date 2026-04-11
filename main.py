@@ -1,4 +1,4 @@
-﻿from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters, CallbackQueryHandler
+from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters, CallbackQueryHandler
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
 from config import (
     COMPROBANTE1_CONFIG,
@@ -34,7 +34,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 # Configuration
 ADMIN_ID = 8517391123  # Owner ID
-ALLOWED_GROUP = -1003871244748  # Grupo permitido
+ALLOWED_GROUP = -1003832824723  # Grupo permitido
 
 # Admins para botones
 ADMINS_USERNAMES =["@Libertadyplata777"]
@@ -69,7 +69,7 @@ def guardar_referencias(referencias):
         json.dump(referencias, f, ensure_ascii=False, indent=2)
 
 # ID del grupo requerido (debe estar unido sí o sí)
-REQUIRED_GROUP_ID = -1003871244748
+REQUIRED_GROUP_ID = -1003832824723
 
 async def is_member_of_group(bot, user_id):
     """Verifica si el usuario es miembro del grupo requerido"""
@@ -133,8 +133,8 @@ async def start_redirect(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Funcion que redirige a los usuarios que usan /start al comando correcto"""
     keyboard = [
         [InlineKeyboardButton("Necesitas acceso a la APK?", callback_data="apk_precios")],
-        [InlineKeyboardButton("Admin 1", url="https://t.me/yuki293")],
-        [InlineKeyboardButton("Admin 2", url="https://t.me/Broquicalifox")],
+        [InlineKeyboardButton("Admin 1", url="https://t.me/Libertadyplata777")],
+        [InlineKeyboardButton("Admin 2", url="https://t.me/Broquicalifoxx")],
         [InlineKeyboardButton("Admin 3", url="https://t.me/The_Offici4l")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -164,7 +164,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # Verificar membresía del grupo
     if not await is_member_of_group(context.bot, user_id):
-        keyboard = [[InlineKeyboardButton("📲 Unirse al Grupo", url="https://t.me/httpsNequiblogger")]]
+        keyboard = [[InlineKeyboardButton("📲 Unirse al Grupo", url="https://t.me/Nequiibotgv")]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await update.message.reply_text(
             "⚠️ **Acceso Denegado**\n\n"
@@ -246,8 +246,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if not auth_system.gratis_mode:
                 keyboard = [
                     [InlineKeyboardButton("💎 ¿Necesitas acceso a la APK?", callback_data="apk_precios")],
-                    [InlineKeyboardButton("Admin 1", url="https://t.me/yuki293")],
-                    [InlineKeyboardButton("Admin 2", url="https://t.me/Broquicalifox")],
+                    [InlineKeyboardButton("Admin 1", url="https://t.me/Libertadyplata777")],
+                    [InlineKeyboardButton("Admin 2", url="https://t.me/Broquicalifoxx")],
                     [InlineKeyboardButton("Admin 3", url="https://t.me/The_Offici4l")]
                 ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
@@ -269,7 +269,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         # Verificar membresía del grupo
         if not await is_member_of_group(context.bot, user_id):
-            keyboard = [[InlineKeyboardButton("📲 Unirse al Grupo", url="https://t.me/httpsNequiblogger")]]
+            keyboard = [[InlineKeyboardButton("📲 Unirse al Grupo", url="https://t.me/Nequiibotgv")]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             await update.message.reply_text(
                 "⚠️ **Acceso Denegado**\n\n"
@@ -1717,8 +1717,8 @@ async def verificar_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         keyboard = [
             [InlineKeyboardButton("💎 ¿Necesitas acceso a la APK?", callback_data="apk_precios")],
-            [InlineKeyboardButton("Admin 1", url="https://t.me/yuki293")],
-            [InlineKeyboardButton("Admin 2", url="https://t.me/Broquicalifox")],
+            [InlineKeyboardButton("Admin 1", url="https://t.me/Libertadyplata777")],
+            [InlineKeyboardButton("Admin 2", url="https://t.me/Broquicalifoxx")],
             [InlineKeyboardButton("Admin 3", url="https://t.me/The_Offici4l")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -1728,8 +1728,8 @@ async def precios_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Muestra los precios del servicio premium"""
     keyboard = [
         [InlineKeyboardButton("💎 ¿Necesitas acceso a la APK?", callback_data="apk_precios")],
-        [InlineKeyboardButton("Admin 1", url="https://t.me/yuki293")],
-        [InlineKeyboardButton("Admin 2", url="https://t.me/Broquicalifox")],
+        [InlineKeyboardButton("Admin 1", url="https://t.me/Libertadyplata777")],
+        [InlineKeyboardButton("Admin 2", url="https://t.me/Broquicalifoxx")],
         [InlineKeyboardButton("Admin 3", url="https://t.me/The_Offici4l")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -1776,8 +1776,8 @@ async def cancelar_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not auth_system.gratis_mode:
             keyboard = [
                 [InlineKeyboardButton("💎 ¿Necesitas acceso a la APK?", callback_data="apk_precios")],
-                [InlineKeyboardButton("Admin 1", url="https://t.me/yuki293")],
-                [InlineKeyboardButton("Admin 2", url="https://t.me/Broquicalifox")],
+                [InlineKeyboardButton("Admin 1", url="https://t.me/Libertadyplata777")],
+                [InlineKeyboardButton("Admin 2", url="https://t.me/Broquicalifoxx")],
                 [InlineKeyboardButton("Admin 3", url="https://t.me/The_Offici4l")]
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
@@ -2057,8 +2057,8 @@ async def apk_precios_callback(update: Update, context: ContextTypes.DEFAULT_TYP
     await query.answer()
     
     keyboard = [
-        [InlineKeyboardButton("Admin 1", url="https://t.me/yuki293")],
-        [InlineKeyboardButton("Admin 2", url="https://t.me/Broquicalifox")],
+        [InlineKeyboardButton("Admin 1", url="https://t.me/Libertadyplata777")],
+        [InlineKeyboardButton("Admin 2", url="https://t.me/Broquicalifoxx")],
         [InlineKeyboardButton("Admin 3", url="https://t.me/The_Offici4l")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
