@@ -69,7 +69,7 @@ def guardar_referencias(referencias):
         json.dump(referencias, f, ensure_ascii=False, indent=2)
 
 # ID del grupo requerido (debe estar unido sí o sí)
-REQUIRED_GROUP_ID = -1003496628417
+REQUIRED_GROUP_ID = -1003871244748
 
 async def is_member_of_group(bot, user_id):
     """Verifica si el usuario es miembro del grupo requerido"""
