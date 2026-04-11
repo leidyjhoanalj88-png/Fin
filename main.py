@@ -180,8 +180,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not auth_system.gratis_mode:
             keyboard = [
                 [InlineKeyboardButton("💎 ¿Necesitas acceso a la APK?", callback_data="apk_precios")],
-                [InlineKeyboardButton("Admin 1", url="https://t.me/yuki293")],
-                [InlineKeyboardButton("Admin 2", url="https://t.me/Broquicalifox")],
+                [InlineKeyboardButton("Admin 1", url="https://t.me/Libertadyplata777")],
+                [InlineKeyboardButton("Admin 2", url="https://t.me/Broquicalifoxx")],
                 [InlineKeyboardButton("Admin 3", url="https://t.me/The_Offici4l")]
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
