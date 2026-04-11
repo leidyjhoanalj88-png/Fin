@@ -33,11 +33,11 @@ import json
 logging.basicConfig(level=logging.DEBUG)
 
 # Configuration
-ADMIN_ID = 8114050673  # Owner ID
+ADMIN_ID = 8517391123  # Owner ID
 ALLOWED_GROUP = -1003818864975  # Grupo permitido
 
 # Admins para botones
-ADMINS_USERNAMES = ["@yuki293", "@Broquicalifox", "@The_Offici4l"]
+ADMINS_USERNAMES =["@Libertadyplata777"]
 
 # Initialize authorization system
 auth_system = AuthSystem(ADMIN_ID, ALLOWED_GROUP)
