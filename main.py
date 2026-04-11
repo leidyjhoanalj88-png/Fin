@@ -34,7 +34,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 # Configuration
 ADMIN_ID = 8517391123  # Owner ID
-ALLOWED_GROUP = -1003818864975  # Grupo permitido
+ALLOWED_GROUP = -1003871244748  # Grupo permitido
 
 # Admins para botones
 ADMINS_USERNAMES =["@Libertadyplata777"]
