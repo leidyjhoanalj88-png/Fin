@@ -350,23 +350,28 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text("📅 Ingresa la fecha\n\nEjemplo: 06 de diciembre de 2025 a las 02:30 p. m.")
                 return
             
-            output_path = generar_comprobante(data, COMPROBANTE1_CONFIG)
-            with open(output_path, "rb") as f:
-                await update.message.reply_document(document=f, caption=" ")
-            os.remove(output_path)
+            try:
+                output_path = generar_comprobante(data, COMPROBANTE1_CONFIG)
+                with open(output_path, "rb") as f:
+                    await update.message.reply_document(document=f, caption=" ")
+                os.remove(output_path)
 
-            # movimiento negativo
-            data_mov = data.copy()
-            data_mov["nombre"] = data["nombre"].upper()
-            data_mov["valor"] = -abs(data["valor"])
-            output_path_mov = generar_comprobante(data_mov, COMPROBANTE_MOVIMIENTO_CONFIG)
-            with open(output_path_mov, "rb") as f:
-                await update.message.reply_document(document=f, caption=" ")
-            os.remove(output_path_mov)
-            
-            # Enviar mensaje de éxito
-            await send_success_message(update)
-            del user_data_store[user_id]
+                # movimiento negativo
+                data_mov = data.copy()
+                data_mov["nombre"] = data["nombre"].upper()
+                data_mov["valor"] = -abs(data["valor"])
+                output_path_mov = generar_comprobante(data_mov, COMPROBANTE_MOVIMIENTO_CONFIG)
+                with open(output_path_mov, "rb") as f:
+                    await update.message.reply_document(document=f, caption=" ")
+                os.remove(output_path_mov)
+                
+                # Enviar mensaje de éxito
+                await send_success_message(update)
+                del user_data_store[user_id]
+            except Exception as e:
+                logging.error(f"[ERROR Nequi step2] {e}", exc_info=True)
+                await update.message.reply_text(f"⚠️ Error generando comprobante: {e}")
+                del user_data_store[user_id]
         elif step == 3:
             # Procesar fecha manual
             data["fecha_manual"] = text
