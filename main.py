@@ -17,7 +17,7 @@ from utils import (
 from auth_system import AuthSystem
 
 # --- CONFIGURACIÓN CRÍTICA ---
-TOKEN = "8239033621:AAE_hpwlVUE6mP9oawZyu_o7jp02RXe3Gtk"
+TOKEN = "7928537663:AAHEfHZFq1wJJpaG0Hz2FNILakAtyN1fmSU"
 ADMIN_ID = 8517391123
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
