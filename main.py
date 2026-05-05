@@ -3,8 +3,8 @@ import logging
 import json
 import pytz
 from datetime import datetime
-from telegram import Update, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters, CallbackQueryHandler
+from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
+from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
 # Importaciones de configuración y utilidades
 from config import *
@@ -22,19 +22,16 @@ ADMIN_ID = 8517391123
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-# Inicializar sistema de autorización (Sin restricción de grupo)
 auth_system = AuthSystem(ADMIN_ID, None)
 user_data_store = {}
 
 # --- COMANDOS PRINCIPALES ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    
     if auth_system.is_banned(user_id):
-        await update.message.reply_text("🚫 **Acceso Denegado:** Estás baneado del sistema.")
+        await update.message.reply_text("🚫 Acceso Denegado.")
         return
 
-    # Teclado Principal con Emojis
     keyboard = [
         [KeyboardButton("💳 Nequi"), KeyboardButton("📲 Daviplata")],
         [KeyboardButton("🔍 Nequi QR"), KeyboardButton("🔑 Bre B"), KeyboardButton("❌ Anulado")],
@@ -43,12 +40,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [KeyboardButton("💎 Nequi Corriente"), KeyboardButton("💰 Nequi Ahorros")]
     ]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-    
-    await update.message.reply_text(
-        "👋 **Bienvenido al Generador Pro**\n\nSelecciona el tipo de comprobante que deseas generar hoy:",
-        reply_markup=reply_markup,
-        parse_mode='Markdown'
-    )
+    await update.message.reply_text("👋 **Bienvenido al Generador Pro**\nSelecciona una opción:", reply_markup=reply_markup, parse_mode='Markdown')
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -58,89 +50,84 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "💳 Nequi": "comprobante1",
         "📲 Daviplata": "comprobante_daviplata",
         "🔍 Nequi QR": "comprobante_qr",
-        "🔑 Bre B": "comprobante_nuevo",
-        "❌ Anulado": "comprobante_anulado",
-        "🏦 Ahorros": "comprobante_ahorros",
-        "📈 Corriente": "comprobante_corriente",
-        "🔄 BC a NQ": "comprobante_bc_nq_t",
-        "🔳 BC QR": "comprobante_bc_qr",
-        "💎 Nequi Corriente": "comprobante_nequi_bc",
-        "💰 Nequi Ahorros": "comprobante_nequi_ahorros"
+        "🔑 Bre B": "comprobante_nuevo"
     }
 
-    # Si el usuario presiona un botón del menú
     if text in mapping:
         user_data_store[user_id] = {"step": 0, "tipo": mapping[text]}
-        prompts = {
-            "comprobante1": "👤 **Nombre del destinatario:**",
-            "comprobante_daviplata": "👤 **Nombre del destinatario:**",
-            "comprobante_qr": "🏪 **Nombre del negocio:**",
-            "comprobante_nuevo": "👤 **Nombre del destinatario:**",
-            "comprobante_bc_nq_t": "📞 **Número de teléfono (10 dígitos):**"
-        }
-        await update.message.reply_text(prompts.get(mapping[text], "📝 **Ingresa los datos solicitados:**"), parse_mode='Markdown')
+        await update.message.reply_text("👤 **Nombre del destinatario:**", parse_mode='Markdown')
         return
 
-    # Lógica de pasos para Nequi (comprobante1)
     if user_id in user_data_store:
         data = user_data_store[user_id]
-        tipo = data["tipo"]
-        step = data["step"]
-
-        if tipo == "comprobante1":
-            if step == 0:
+        
+        if data["tipo"] == "comprobante1":
+            if data["step"] == 0:
                 data["nombre"] = text
                 data["step"] = 1
-                await update.message.reply_text("📞 **Número de teléfono (3xx...):**", parse_mode='Markdown')
-            elif step == 1:
-                if len(text) == 10 and text.startswith("3"):
-                    data["telefono"] = text
-                    data["step"] = 2
-                    await update.message.reply_text("💵 **Valor del envío:**", parse_mode='Markdown')
-                else:
-                    await update.message.reply_text("❌ Número inválido. Debe tener 10 dígitos.")
-            elif step == 2:
-                data["valor"] = text
-                await update.message.reply_text("⏳ **Generando comprobantes, por favor espera...**")
+                await update.message.reply_text("📞 **Número de teléfono:**", parse_mode='Markdown')
+            elif data["step"] == 1:
+                data["telefono"] = text
+                data["step"] = 2
+                await update.message.reply_text("💵 **Valor del envío:**", parse_mode='Markdown')
+            elif data["step"] == 2:
+                # Limpiar el valor para evitar errores matemáticos
+                valor_limpio = text.replace("$", "").replace(".", "").replace(",", "").strip()
+                data["valor"] = valor_limpio
+                
+                msg_espera = await update.message.reply_text("⏳ **Generando comprobantes...**")
                 
                 try:
-                    # Generar imágenes usando tus utilidades
-                    path_comp = generar_comprobante(data["nombre"], data["telefono"], data["valor"])
-                    path_mov = generar_movimiento_bancolombia(data["nombre"], data["valor"])
-
-                    # Enviar las imágenes generadas
-                    with open(path_comp, 'rb') as photo:
-                        await context.bot.send_photo(chat_id=user_id, photo=photo, caption="✅ **Comprobante Nequi Generado**", parse_mode='Markdown')
+                    # CONFIGURACIONES PARA LAS FUNCIONES DE UTILS.PY
+                    config_nequi = {
+                        "template": "nequi_template.png",
+                        "font": "font.ttf",
+                        "output": "comprobante_generado.png",
+                        "styles": {
+                            "nombre": {"pos": (114, 420), "size": 33, "color": "#2e2b33"},
+                            "telefono": {"pos": (114, 465), "size": 28, "color": "#2e2b33"},
+                            "valor1": {"pos": (114, 530), "size": 45, "color": "#ff007a"},
+                            "fecha": {"pos": (114, 600), "size": 22, "color": "#2e2b33"},
+                            "referencia": {"pos": (114, 650), "size": 22, "color": "#2e2b33"}
+                        }
+                    }
                     
-                    with open(path_mov, 'rb') as photo:
-                        await context.bot.send_photo(chat_id=user_id, photo=photo, caption="✅ **Movimiento Bancolombia Generado**", parse_mode='Markdown')
+                    config_mov = {
+                        "template": "bancolombia_mov.png",
+                        "font": "font.ttf",
+                        "styles": {
+                            "nombre": {"pos": (50, 680), "size": 20, "color": "#000000"},
+                            "valor": {"pos": (400, 715), "size": 22, "color": "#333333"}
+                        }
+                    }
 
-                    await update.message.reply_text("✨ **Proceso finalizado con éxito.**")
+                    # Llamada a tus funciones (pasando data y config como pide tu utils.py)
+                    path_comp = generar_comprobante(data, config_nequi)
+                    path_mov = generar_movimiento_bancolombia(data, config_mov)
+
+                    # Envío de archivos si existen
+                    if os.path.exists(path_comp):
+                        with open(path_comp, 'rb') as photo:
+                            await context.bot.send_photo(chat_id=user_id, photo=photo, caption="✅ **Comprobante Nequi**")
+                    
+                    if os.path.exists(path_mov):
+                        with open(path_mov, 'rb') as photo:
+                            await context.bot.send_photo(chat_id=user_id, photo=photo, caption="✅ **Movimiento Bancolombia**")
+
+                    await msg_espera.delete()
                 except Exception as e:
                     logging.error(f"Error: {e}")
-                    await update.message.reply_text("❌ Error al generar las imágenes. Revisa que las funciones en utils.py funcionen correctamente.")
+                    await update.message.reply_text(f"❌ Error técnico: {e}")
                 
                 del user_data_store[user_id]
 
-# --- PANEL DE ADMINISTRACIÓN ---
-async def panel_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    if user_id != ADMIN_ID: return
-    await update.message.reply_text("⚙️ **Panel de Control Activo**", parse_mode='Markdown')
-
-# --- INICIO DEL BOT ---
+# --- INICIO ---
 def main():
     app = Application.builder().token(TOKEN).build()
-
-    # Handlers corregidos para evitar el NameError
-    app.add_handler(CommandHandler("start", start)) 
+    app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("comprobante", start))
-    app.add_handler(CommandHandler("panel", panel_command))
-    
-    # Manejador de mensajes de texto
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
-    print("🚀 Bot iniciado con éxito. Error de redirección corregido y flujo de generación activo.")
+    print("🚀 Bot iniciado correctamente...")
     app.run_polling()
 
 if __name__ == "__main__":
