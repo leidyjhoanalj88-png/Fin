@@ -6,110 +6,127 @@ import random
 import pytz
 import os
 
-# Configurar idioma español
+# Configurar idioma
 try:
     locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
 except:
     pass
 
+# --- HELPERS DE CARGA Y SEGURIDAD ---
+def cargar_fuente(font_path, size):
+    try:
+        if font_path and os.path.exists(font_path):
+            return ImageFont.truetype(font_path, size)
+        return ImageFont.load_default()
+    except:
+        return ImageFont.load_default()
+
 def draw_text_with_outline(draw, position, text, font, fill, outline_fill="#2e2b33", outline_width=2):
-    # Dibujamos el texto. El outline es opcional dependiendo del diseño
     draw.text(position, str(text), font=font, fill=fill)
 
 def enmascarar_nombre(nombre: str) -> str:
     if not nombre: return ""
     partes = nombre.split()
-    partes_mask = []
-    for palabra in partes:
-        if len(palabra) <= 3:
-            partes_mask.append(palabra + "***")
-        else:
-            partes_mask.append(palabra[:3] + "***")
-    return " ".join(partes_mask)
+    return " ".join([p[:3] + "***" if len(p) > 3 else p + "***" for p in partes])
 
-def cargar_fuente(font_path, size):
-    try:
-        # Intentar cargar la fuente desde la ruta
-        if os.path.exists(font_path):
-            return ImageFont.truetype(font_path, size)
-        else:
-            # Si no existe, usar la fuente por defecto de PIL
-            return ImageFont.load_default()
-    except:
-        return ImageFont.load_default()
+def formatear_telefono_co(numero: str) -> str:
+    digitos = "".join(ch for ch in numero if ch.isdigit())
+    if len(digitos) == 10:
+        return f"{digitos[:3]} {digitos[3:6]} {digitos[6:]}"
+    return numero
 
-# --- FUNCIÓN PRINCIPAL NEQUI ---
-def generar_comprobante(data, config=None):
-    # Si no hay config, usamos una base por defecto para evitar errores
-    template_path = config.get("template", "nequi_template.png") if config else "nequi_template.png"
-    font_path = config.get("font", "font.ttf") if config else "font.ttf"
-    styles = config.get("styles", {}) if config else {}
-    
+# --- FUNCIONES DE GENERACIÓN ---
+
+def generar_comprobante(data, config):
+    template_path = config["template"]
     output_path = f"gen_{uuid.uuid4().hex}.png"
-    
-    if not os.path.exists(template_path):
-        raise FileNotFoundError(f"No se encontró el template: {template_path}")
+    styles = config["styles"]
+    font_path = config["font"]
 
     image = Image.open(template_path).convert("RGB")
     draw = ImageDraw.Draw(image)
 
-    # Preparar Datos
+    # Lógica de fecha y valor
     now = datetime.now(pytz.timezone("America/Bogota"))
-    fecha_auto = now.strftime("%d de %m de %Y a las %I:%M %p").lower()
+    fecha = data.get("fecha_manual") or now.strftime("%d de %m de %Y a las %I:%M %p").lower()
+    valor_fmt = "$ {:,.2f}".format(float(str(data.get("valor", 0)).replace(".",""))).replace(",", "X").replace(".", ",").replace("X", ".")
     
-    valor_raw = float(str(data.get("valor", 0)).replace(".", "").replace(",", ""))
-    valor_fmt = "$ {:,.2f}".format(valor_raw).replace(",", "X").replace(".", ",").replace("X", ".")
-
     datos = {
         "nombre": data.get("nombre", ""),
-        "telefono": data.get("telefono", ""),
+        "telefono": formatear_telefono_co(data.get("telefono", "")),
         "valor1": valor_fmt,
-        "fecha": data.get("fecha_manual", fecha_auto),
-        "referencia": data.get("referencia_manual", f"M{random.randint(1000000, 9999999)}")
+        "fecha": fecha,
+        "referencia": data.get("referencia_manual") or f"M{random.randint(1000000, 9999999)}"
     }
 
-    # Dibujar
     for campo, texto in datos.items():
         if campo in styles:
             style = styles[campo]
-            font = cargar_fuente(font_path, style.get("size", 25))
-            draw.text(style["pos"], str(texto), font=font, fill=style.get("color", "#2e2b33"))
+            font = cargar_fuente(font_path, style["size"])
+            draw.text(style["pos"], str(texto), font=font, fill=style["color"])
 
     image.save(output_path)
     return output_path
 
-# --- FUNCIÓN MOVIMIENTO BANCOLOMBIA ---
-def generar_movimiento_bancolombia(data, config=None):
-    template_path = config.get("template", "bancolombia_mov.png") if config else "bancolombia_mov.png"
-    font_path = config.get("font", "font.ttf") if config else "font.ttf"
-    styles = config.get("styles", {}) if config else {}
-    
-    output_path = f"mov_{uuid.uuid4().hex}.png"
+def generar_comprobante_nuevo(data, config):
+    # Esta es la que causaba el error de importación
+    return generar_comprobante(data, config)
 
-    if not os.path.exists(template_path):
-        raise FileNotFoundError(f"No se encontró el template de movimiento: {template_path}")
+def generar_comprobante_anulado(data, config):
+    return generar_comprobante(data, config)
+
+def generar_comprobante_ahorros(data, config):
+    template_path = config["template"]
+    output_path = f"gen_{uuid.uuid4().hex}.png"
+    styles = config["styles"]
+    font_path = config["font"]
+    image = Image.open(template_path).convert("RGB")
+    draw = ImageDraw.Draw(image)
+    
+    for campo, style in styles.items():
+        texto = str(data.get(campo, ""))
+        font = cargar_fuente(font_path, style["size"])
+        draw.text(style["pos"], texto, font=font, fill=style["color"])
+    
+    image.save(output_path)
+    return output_path
+
+def generar_comprobante_daviplata(data, config):
+    return generar_comprobante_ahorros(data, config)
+
+def generar_comprobante_bc_nq_t(data, config):
+    return generar_comprobante_ahorros(data, config)
+
+def generar_comprobante_bc_qr(data, config):
+    return generar_comprobante_ahorros(data, config)
+
+def generar_comprobante_nequi_bc(data, config):
+    return generar_comprobante(data, config)
+
+def generar_comprobante_nequi_ahorros(data, config):
+    return generar_comprobante(data, config)
+
+def generar_movimiento_bancolombia(data, config):
+    template_path = config["template"]
+    output_path = f"mov_{uuid.uuid4().hex}.png"
+    styles = config["styles"]
+    font_path = config["font"]
 
     image = Image.open(template_path).convert("RGB")
     draw = ImageDraw.Draw(image)
 
-    # Lógica de dibujo de montos (Simplificada para estabilidad)
-    valor_raw = abs(float(str(data.get("valor", 0)).replace(".", "").replace(",", "")))
-    valor_fmt = f"{valor_raw:,.0f}".replace(",", ".") + ",00"
-    
-    # Dibujar Nombre en Mayúsculas
+    valor_raw = abs(float(str(data.get("valor", 0)).replace(".","")))
+    valor_fmt = f"-$ {valor_raw:,.0f}".replace(",", ".") + ",00"
+
     if "nombre" in styles:
         s = styles["nombre"]
-        font_n = cargar_fuente(font_path, s.get("size", 20))
-        draw.text(s["pos"], data.get("nombre", "").upper(), font=font_n, fill=s.get("color", "black"))
+        font_n = cargar_fuente(font_path, s["size"])
+        draw.text(s["pos"], data.get("nombre", "").upper(), font=font_n, fill=s["color"])
 
-    # Dibujar Valor
     if "valor" in styles:
         s = styles["valor"]
         font_v = cargar_fuente(font_path, s.get("size", 22))
-        # Posicionamiento simple para evitar errores de medición
-        draw.text(s.get("pos", (400, 715)), f"-$ {valor_fmt}", font=font_v, fill=s.get("color", "#333333"))
+        draw.text(s.get("pos", (400, 715)), valor_fmt, font=font_v, fill=s["color"])
 
     image.save(output_path)
     return output_path
-
-# Las demás funciones (Daviplata, Ahorros, etc.) deben seguir este mismo patrón de cargar_fuente
