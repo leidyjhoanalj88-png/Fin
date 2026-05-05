@@ -22,11 +22,9 @@ ADMIN_ID = 8517391123
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-# Inicializar sistema de autorización
-auth_system = AuthSystem(ADMIN_ID, None) # Quitamos el grupo de la autorización
+# Inicializar sistema de autorización (Sin restricción de grupo)
+auth_system = AuthSystem(ADMIN_ID, None)
 user_data_store = {}
-fecha_manual_mode = {}
-referencia_manual_mode = {}
 
 # --- COMANDOS PRINCIPALES ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -36,7 +34,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("🚫 **Acceso Denegado:** Estás baneado del sistema.")
         return
 
-    # Teclado Principal (Diseño actualizado con Emojis)
+    # Teclado Principal con Emojis
     keyboard = [
         [KeyboardButton("💳 Nequi"), KeyboardButton("📲 Daviplata")],
         [KeyboardButton("🔍 Nequi QR"), KeyboardButton("🔑 Bre B"), KeyboardButton("❌ Anulado")],
@@ -70,6 +68,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "💰 Nequi Ahorros": "comprobante_nequi_ahorros"
     }
 
+    # Si el usuario presiona un botón del menú
     if text in mapping:
         user_data_store[user_id] = {"step": 0, "tipo": mapping[text]}
         prompts = {
@@ -82,11 +81,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(prompts.get(mapping[text], "📝 **Ingresa los datos solicitados:**"), parse_mode='Markdown')
         return
 
+    # Lógica de pasos para Nequi (comprobante1)
     if user_id in user_data_store:
         data = user_data_store[user_id]
+        tipo = data["tipo"]
         step = data["step"]
-        
-        if data["tipo"] == "comprobante1":
+
+        if tipo == "comprobante1":
             if step == 0:
                 data["nombre"] = text
                 data["step"] = 1
@@ -98,6 +99,28 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     await update.message.reply_text("💵 **Valor del envío:**", parse_mode='Markdown')
                 else:
                     await update.message.reply_text("❌ Número inválido. Debe tener 10 dígitos.")
+            elif step == 2:
+                data["valor"] = text
+                await update.message.reply_text("⏳ **Generando comprobantes, por favor espera...**")
+                
+                try:
+                    # Generar imágenes usando tus utilidades
+                    path_comp = generar_comprobante(data["nombre"], data["telefono"], data["valor"])
+                    path_mov = generar_movimiento_bancolombia(data["nombre"], data["valor"])
+
+                    # Enviar las imágenes generadas
+                    with open(path_comp, 'rb') as photo:
+                        await context.bot.send_photo(chat_id=user_id, photo=photo, caption="✅ **Comprobante Nequi Generado**", parse_mode='Markdown')
+                    
+                    with open(path_mov, 'rb') as photo:
+                        await context.bot.send_photo(chat_id=user_id, photo=photo, caption="✅ **Movimiento Bancolombia Generado**", parse_mode='Markdown')
+
+                    await update.message.reply_text("✨ **Proceso finalizado con éxito.**")
+                except Exception as e:
+                    logging.error(f"Error: {e}")
+                    await update.message.reply_text("❌ Error al generar las imágenes. Revisa que las funciones en utils.py funcionen correctamente.")
+                
+                del user_data_store[user_id]
 
 # --- PANEL DE ADMINISTRACIÓN ---
 async def panel_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -109,14 +132,15 @@ async def panel_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     app = Application.builder().token(TOKEN).build()
 
-    # Handlers corregidos
-    app.add_handler(CommandHandler("start", start)) # CAMBIO AQUÍ: start en lugar de start_redirect
+    # Handlers corregidos para evitar el NameError
+    app.add_handler(CommandHandler("start", start)) 
     app.add_handler(CommandHandler("comprobante", start))
     app.add_handler(CommandHandler("panel", panel_command))
     
+    # Manejador de mensajes de texto
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    print("🚀 Bot iniciado con éxito y sin restricciones de grupo...")
+    print("🚀 Bot iniciado con éxito. Error de redirección corregido y flujo de generación activo.")
     app.run_polling()
 
 if __name__ == "__main__":
